@@ -1,7 +1,7 @@
 {
   "id": "burn-gambling",
   "title": "🔥 Gambling",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "compatibility": {
     "minimum": "13",
     "verified": "14"
@@ -39,5 +39,13 @@
       "path": "horse/lang/en.json"
     }
   ],
-  "socket": true
+  "socket": true,
+  "relationships": {
+    "requires": [
+      {
+        "id": "burnhub",
+        "type": "module"
+      }
+    ]
+  }
 }

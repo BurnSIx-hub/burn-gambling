@@ -229,7 +229,7 @@ function showToast(msg) {
 }
 
 Hooks.on("getSceneControlButtons", controls => {
-  return; // кнопка убрана: у всех есть группа 🔥 Burn
+  if (game.modules.get("burnhub")?.active) return; // с BurnHub кнопка в папке 🔥 Burn; без него — своя (видна всем)
   // V13/V14: controls — объект { tokens: { tools: {...} }, ... }
   // Пробуем все возможные ключи
   const tokenGroup = controls["tokens"] ?? controls["token"] ?? controls["basic"];

@@ -45,7 +45,7 @@ Hooks.once('ready', () => {
 });
 
 function _doInject() {
-  return; // кнопка убрана: у всех есть группа 🔥 Burn
+  if (game.modules.get("burnhub")?.active) return; // с BurnHub кнопка в папке 🔥 Burn; без него — своя (видна всем)
   if (document.getElementById('hr-toolbar-btn')) return;
 
   // Foundry v13.351 structure:
