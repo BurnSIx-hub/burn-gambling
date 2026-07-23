@@ -1,0 +1,170 @@
+{{!-- Horse Racing Totalizator — GTA SA style --}}
+<div class="hr-root" data-phase="{{phase}}">
+
+  {{!-- ══ SETUP ══ --}}
+  <div class="screen screen-setup {{#unless (eq phase 'setup')}}hidden{{/unless}}">
+    {{#if isGM}}
+    <div class="gm-bar">
+      <button id="btn-new-race"   class="btn btn-blue"><i class="fas fa-plus"></i> Новая гонка</button>
+      <button id="btn-open-bets"  class="btn btn-gold"><i class="fas fa-coins"></i> Открыть ставки</button>
+      <button id="btn-give-coins" class="btn btn-teal"><i class="fas fa-hand-holding-usd"></i> Выдать монеты</button>
+      <button id="btn-open-all"   class="btn btn-gray"><i class="fas fa-users"></i> Открыть всем</button>
+    </div>
+    <div class="gm-names">
+      {{#each horses}}
+      <div class="name-row" style="border-left:3px solid {{color}}">
+        <img src="{{../modulePath}}/assets/horses/horse_{{id}}_frame1.png" height="32">
+        <input class="name-input" data-horse="{{id}}" type="text" value="{{name}}">
+      </div>
+      {{/each}}
+    </div>
+    <div class="gm-players">
+      <div class="section-title">Балансы игроков</div>
+      {{#each players}}
+      <div class="player-row">
+        <span>{{name}}</span>
+        <span style="color:#f5c518">{{balance}} {{../currency}}</span>
+      </div>
+      {{/each}}
+    </div>
+    {{else}}
+    <div class="waiting-msg">
+      <i class="fas fa-horse-head"></i>
+      <p>Ожидайте начала гонки...</p>
+      <p class="balance-line">Баланс: <b class="my-balance">{{myBal}} {{currency}}</b></p>
+    </div>
+    {{/if}}
+  </div>
+
+  {{!-- ══ BETTING ══ --}}
+  <div class="screen screen-betting {{#unless (eq phase 'betting')}}hidden{{/unless}}">
+
+    {{!-- TOP BAR --}}
+    <div class="bet-topbar">
+      <div class="bet-topbar-left">
+        <span class="race-title">СКАЧКИ</span>
+        <span class="bets-open-dot">● ПРИЁМ СТАВОК</span>
+      </div>
+      <div class="bet-topbar-right">
+        Баланс: <b class="my-balance">{{myBal}} {{currency}}</b>
+      </div>
+    </div>
+
+    <div class="bet-layout">
+
+      {{!-- HORSES TABLE --}}
+      <div class="horses-panel">
+        <div class="horses-header">
+          <span>№</span><span>ЛОШАДЬ</span><span>ШАНС</span><span>КОЭФ.</span><span>В ПУЛЕ</span>
+        </div>
+        {{#each horses}}
+        <div class="horse-row {{#if myBet}}has-bet{{/if}}" data-horse="{{id}}">
+          <span class="horse-num" style="background:{{color}};color:#111">{{@index1}}</span>
+          <span class="horse-name-cell">
+            <img src="{{../modulePath}}/assets/horses/horse_{{id}}_frame1.png" class="horse-thumb">
+            <span style="color:{{color}}">{{name}}</span>
+          </span>
+          <span class="horse-chance-bar">
+            <span class="chance-fill" style="width:{{chance}}%;background:{{color}}"></span>
+          </span>
+          <span class="odds-chip" data-horse="{{id}}" style="background:{{color}};color:#111">×{{odds}}</span>
+          <span class="pool-num" data-horse="{{id}}">{{totalBet}}</span>
+          {{#if myBet}}<span class="my-bet-badge">✓ {{myBet}}</span>{{/if}}
+        </div>
+        {{/each}}
+        <div class="pool-total-row">
+          Общий пул: <b id="total-pool">{{totalPool}}</b> {{currency}}
+        </div>
+      </div>
+
+      {{!-- RIGHT: BET FORM + GM --}}
+      <div class="bet-sidebar">
+
+        {{!-- Selected horse display --}}
+        <div class="selected-box">
+          <div class="selected-label">ВЫБРАНО</div>
+          <div id="sel-name" class="sel-horse-name">— выберите —</div>
+          <div id="sel-odds" class="sel-odds">—</div>
+        </div>
+
+        {{!-- Quick bets --}}
+        <div class="quick-bets-label">БЫСТРАЯ СТАВКА</div>
+        <div class="quick-bets">
+          <button class="quick-bet" data-v="10">10</button>
+          <button class="quick-bet" data-v="50">50</button>
+          <button class="quick-bet" data-v="100">100</button>
+          <button class="quick-bet" data-v="500">500</button>
+        </div>
+        <input id="bet-amount" class="bet-input" type="number" min="1" placeholder="Своя сумма...">
+        <button id="btn-bet" class="btn-place" disabled>ПОСТАВИТЬ</button>
+
+        {{#if isGM}}
+        <div class="gm-divider"></div>
+        <div class="gm-race-ctrl">
+          <div class="selected-label">GM: ПОБЕДИТЕЛЬ</div>
+          <select id="force-winner" class="force-select">
+            <option value="random">Случайный</option>
+            {{#each horses}}<option value="{{id}}">{{name}}</option>{{/each}}
+          </select>
+          <button id="btn-start-race" class="btn-start"><i class="fas fa-flag-checkered"></i> СТАРТ!</button>
+          <button id="btn-give-coins" class="btn btn-teal" style="width:100%;margin-top:6px">
+            <i class="fas fa-hand-holding-usd"></i> Выдать монеты
+          </button>
+        </div>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+
+  {{!-- ══ RACE ══ --}}
+  <div class="screen screen-race {{#unless (eq phase 'racing')}}hidden{{/unless}}">
+    <div class="race-header-bar">
+      <span class="race-title-bar">🏁 ГОНКА НАЧАЛАСЬ</span>
+      <span class="racing-pulse">LIVE</span>
+    </div>
+
+    {{!-- BG + lanes container --}}
+    <div class="race-viewport">
+      <div id="race-bg" class="race-bg"
+           style="background-image:url('{{modulePath}}/assets/track-bg.png')">
+      </div>
+      <div id="race-lanes" class="race-lanes"></div>
+    </div>
+
+    <div id="winner-bar" class="winner-bar" style="display:none">
+      🏆 ПОБЕДИТЕЛЬ: <span id="winner-name"></span>
+    </div>
+  </div>
+
+  {{!-- ══ RESULTS ══ --}}
+  <div class="screen screen-results {{#unless (eq phase 'results')}}hidden{{/unless}}">
+    <div class="results-wrap">
+      {{#if winnerHorse}}
+      <div class="results-winner">
+        <img src="{{modulePath}}/assets/horses/horse_{{winnerHorse.id}}_frame2.png" height="110">
+        <div class="results-name" style="color:{{winnerHorse.color}}">🏆 {{winnerHorse.name}}</div>
+        <div class="results-odds">Коэффициент ×{{winnerHorse.odds}}</div>
+      </div>
+      {{/if}}
+      <div class="results-balance">
+        Баланс: <b class="my-balance">{{myBal}} {{currency}}</b>
+      </div>
+      {{#if isGM}}
+      <div class="gm-bar" style="justify-content:center;margin-top:14px">
+        <button id="btn-new-race"   class="btn btn-blue"><i class="fas fa-plus"></i> Новая гонка</button>
+        <button id="btn-give-coins" class="btn btn-teal"><i class="fas fa-hand-holding-usd"></i> Выдать монеты</button>
+      </div>
+      <div class="gm-players" style="margin-top:12px">
+        <div class="section-title">Итоговые балансы</div>
+        {{#each players}}
+        <div class="player-row">
+          <span>{{name}}</span>
+          <span style="color:#f5c518">{{balance}} {{../currency}}</span>
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,94 @@
+/* Картотека контейнера (общий стиль burncat для всех 🔥-контейнеров) */
+
+.burncat .window-content {
+  padding: 10px;
+  background: var(--color-cool-5, #1b1d24);
+  color: var(--color-text-primary, #c9c7c0);
+}
+
+.burncat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.burncat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-cool-4, #3a3d47);
+  border-radius: 8px;
+  background: var(--color-cool-5-50, rgba(40, 43, 52, 0.6));
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+
+.burncat-card:hover {
+  border-color: var(--color-warm-2, #d9946c);
+  background: var(--color-cool-4, #2f3340);
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+.burncat-card:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.burncat-icon {
+  flex: 0 0 34px;
+  font-size: 24px;
+  text-align: center;
+  color: var(--color-warm-1, #ee9b3a);
+}
+
+.burncat-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.burncat-title {
+  font-size: var(--font-size-14, 14px);
+  font-weight: bold;
+}
+
+.burncat-sub {
+  font-size: var(--font-size-12, 12px);
+  color: var(--color-text-secondary, #7a7971);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.burncat-go {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--color-text-secondary, #7a7971);
+}
+
+/* Карточки-переключатели (Location Misc): состояние вкл/выкл */
+.burncat-card.burncat-off .burncat-icon {
+  color: var(--color-text-secondary, #666);
+}
+
+.burncat-state {
+  flex: 0 0 auto;
+  font-size: var(--font-size-12, 12px);
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.burncat-card.burncat-on .burncat-state {
+  color: #7ee787;
+}
+
+.burncat-card.burncat-off .burncat-state {
+  color: #f28b82;
+}
