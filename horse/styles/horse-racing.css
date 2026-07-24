@@ -328,7 +328,9 @@
 .gm-divider { border-top: 1px solid #1a3a1a; margin: 4px 0; }
 
 .gm-race-ctrl { display: flex; flex-direction: column; gap: 6px; }
-.force-select {
+/* Селектор с классом окна: стили ядра Foundry (button/select тем)
+   специфичнее одиночного класса и делали текст нечитаемым. */
+.horse-racing-window .force-select {
   background: #060e06;
   color: #aaddaa;
   border: 1px solid #1a5a1a;
@@ -337,6 +339,13 @@
   padding: 4px 6px;
   border-radius: 2px;
   width: 100%;
+}
+
+/* Выпадающий список рисуется нативно и наследует цвета select'а —
+   задаём его пунктам свои, иначе светло-серый текст на светлом фоне. */
+.horse-racing-window .force-select option {
+  background: #0a140a;
+  color: #cfe8cf;
 }
 .btn-start {
   width: 100%;

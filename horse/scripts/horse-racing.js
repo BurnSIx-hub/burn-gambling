@@ -78,8 +78,14 @@ function _doInject() {
 }
 
 function openApp() {
-  if (HorseRacingApp.instance?.rendered) HorseRacingApp.instance.bringToTop();
-  else new HorseRacingApp().render(true);
+  // Строгий синглтон: во время асинхронного рендера instance уже есть,
+  // но rendered ещё false — старая проверка плодила второе окно.
+  if (HorseRacingApp.instance) {
+    HorseRacingApp.instance.render(true);
+    HorseRacingApp.instance.bringToTop?.();
+    return;
+  }
+  new HorseRacingApp().render(true);
 }
 
 // ─────────────────────────────────────────────
@@ -119,8 +125,11 @@ async function gmHandleBet(userId, horseId, amount) {
   const state = getState();
   if (state.phase !== 'betting') return;
   const bal = getBalances();
-  if ((bal[userId] || 0) < amount) return;
-  bal[userId] = (bal[userId] || 0) - amount;
+  const isGmUser = game.users.get(userId)?.isGM;
+  if (!isGmUser) { // ГМ ставит из бесконечного кошелька, баланс не трогаем
+    if ((bal[userId] || 0) < amount) return;
+    bal[userId] = (bal[userId] || 0) - amount;
+  }
   if (!state.bets) state.bets = {};
   if (!state.bets[userId]) state.bets[userId] = {};
   state.bets[userId][horseId] = (state.bets[userId][horseId] || 0) + amount;
@@ -161,11 +170,16 @@ class HorseRacingApp extends Application {
     const currency = game.settings.get(MODULE_ID, 'currencyName');
     const myBets   = (state.bets || {})[uid] || {};
 
-    const horses = (state.horses || HORSES.map(h => ({...h}))).map(h => ({
+    const horses = (state.horses || HORSES.map(h => ({...h}))).map((h, i) => ({
       ...h,
+      num:      i + 1, // номер в таблице ({{@index1}} не существует в Handlebars)
       myBet:    myBets[h.id] || 0,
       totalBet: this._poolFor(h.id, state.bets || {}),
     }));
+    // «Шанс» — обратная величина коэффициента, нормированная к лучшей лошади
+    const raws = horses.map(h => 1 / (h.odds || 2));
+    const maxRaw = Math.max(...raws, 0.001);
+    horses.forEach((h, i) => { h.chance = Math.round((raws[i] / maxRaw) * 100); });
 
     const players = game.users.filter(u => !u.isGM).map(u => ({
       id: u.id, name: u.name, balance: (balances[u.id] || 0),
@@ -177,7 +191,7 @@ class HorseRacingApp extends Application {
       horses,
       players,
       currency,
-      myBal:       balances[uid] || 0,
+      myBal:       game.user.isGM ? '∞' : (balances[uid] || 0), // кошелёк ГМа бесконечен
       totalPool:   this._totalPool(state.bets || {}),
       winner:      state.winner || null,
       winnerHorse: horses.find(h => h.id === state.winner) || null,
@@ -206,7 +220,16 @@ class HorseRacingApp extends Application {
       html.find('#btn-start-race').on('click',    () => this.gmStart());
       html.find('#btn-give-coins').on('click',    () => this.gmGive());
       html.find('#btn-open-all').on('click',      () => emit({ type: 'openApp' }));
+      html.find('#btn-back-setup').on('click',    () => this.gmBackToSetup());
       html.find('.name-input').on('change',       e  => this.gmRename(e));
+
+      // Восстановление: мир завис в фазе racing (окно закрыли во время гонки,
+      // краш и т.п.) — анимации нет, значит доигрываем результат по
+      // сохранённому победителю, иначе новую гонку не начать.
+      if ((getState().phase === 'racing') && !this._interval && !this._raceActive) {
+        this._resolved = false;
+        setTimeout(() => this._resolve(), 400);
+      }
     }
     html.find('.horse-row').on('click',   e => this.selectHorse(e, html));
     html.find('#btn-bet').on('click',     () => this.placeBet(html));
@@ -240,8 +263,10 @@ class HorseRacingApp extends Application {
     const horseId = html.find('.horse-row.selected').data('horse');
     const amount  = parseInt(html.find('#bet-amount').val()) || 0;
     if (!horseId || amount < 1) return;
-    const myBal = (getBalances())[game.user.id] || 0;
-    if (myBal < amount) { ui.notifications.warn('Недостаточно средств!'); return; }
+    if (!game.user.isGM) { // у ГМа кошелёк бесконечный — без проверки
+      const myBal = (getBalances())[game.user.id] || 0;
+      if (myBal < amount) { ui.notifications.warn('Недостаточно средств!'); return; }
+    }
     if (game.user.isGM) await gmHandleBet(game.user.id, horseId, amount);
     else emit({ type: 'placeBet', userId: game.user.id, horseId, amount });
     html.find('#bet-amount').val('');
@@ -272,8 +297,26 @@ class HorseRacingApp extends Application {
     ChatMessage.create({ content: `🏇 <b>Ставки открыты!</b> Делайте ставки — гонка скоро начнётся.` });
   }
 
+  /** ГМ: вернуться с экрана ставок на стартовый, вернув игрокам ставки */
+  async gmBackToSetup() {
+    const s   = getState();
+    const bal = getBalances();
+    for (const [uid, bets] of Object.entries(s.bets || {})) {
+      if (game.users.get(uid)?.isGM) continue; // кошелёк ГМа бесконечен
+      const sum = Object.values(bets).reduce((a, v) => a + v, 0);
+      if (sum > 0) bal[uid] = (bal[uid] || 0) + sum;
+    }
+    s.bets  = {};
+    s.phase = 'setup';
+    await game.settings.set(MODULE_ID, 'playerBalances', bal);
+    await saveState(s);
+    this.render(true);
+    ChatMessage.create({ content: '🏇 Приём ставок отменён, ставки возвращены.' });
+  }
+
   async gmStart() {
     const s = getState();
+    if (s.phase !== 'betting') return; // защита от двойного клика по СТАРТ
     s.phase  = 'racing';
     const forced = this.element?.find('#force-winner')?.val();
     const winner = (forced && forced !== 'random')
@@ -332,15 +375,25 @@ class HorseRacingApp extends Application {
   onSync(state, balances) {
     if (!this.rendered) return;
     const cur  = game.settings.get(MODULE_ID, 'currencyName');
-    const myBal = (balances||{})[game.user.id] || 0;
+    const myBal = game.user.isGM ? '∞' : ((balances||{})[game.user.id] || 0);
     this.element.find('.my-balance').text(`${myBal} ${cur}`);
     (state.horses||[]).forEach(h => {
       this.element.find(`.odds-chip[data-horse="${h.id}"]`).text(`×${h.odds}`);
       this.element.find(`.pool-num[data-horse="${h.id}"]`).text(this._poolFor(h.id, state.bets||{}));
     });
     this.element.find('#total-pool').text(this._totalPool(state.bets||{}));
+    // Экран гонки строится вручную в beginRace — рендер здесь стёр бы дорожки
+    // (это и ломало гонку: syncState после gmStart вызывал полный ре-рендер).
+    if (state.phase === 'racing') return;
     const curPhase = this.element.find('.hr-root').data('phase');
     if (curPhase !== state.phase) this.render(true);
+  }
+
+  /** Пока идёт анимация гонки, любые перерисовки запрещены —
+   *  полный рендер уничтожает построенные вручную дорожки. */
+  render(force, options = {}) {
+    if (this._raceActive && !options.endRace) return this;
+    return super.render(force, options);
   }
 
   // ── RACE ───────────────────────────────────
@@ -350,8 +403,10 @@ class HorseRacingApp extends Application {
     const state  = getState();
     const horses = state.horses || HORSES.map(h=>({...h}));
 
-    this._winner    = winner;
-    this._done      = false;
+    this._winner     = winner;
+    this._done       = false;
+    this._resolved   = false;
+    this._raceActive = true; // блокирует ре-рендеры до конца гонки
     this._bgOffset  = 0;
     this._positions = {};
     this._speeds    = {};
@@ -438,6 +493,10 @@ class HorseRacingApp extends Application {
   }
 
   async _resolve() {
+    if (this._resolved) return; // защита от двойного вызова
+    this._resolved   = true;
+    this._raceActive = false;   // рендеры снова разрешены
+
     const state = getState();
     state.phase = 'results';
     const wh    = state.horses?.find(h => h.id === state.winner);
@@ -451,7 +510,8 @@ class HorseRacingApp extends Application {
         const bet = bets[state.winner] || 0;
         if (bet > 0) {
           const win = Math.floor(bet * odds);
-          bal[uid]  = (bal[uid]||0) + win;
+          // ГМу выигрыш в баланс не пишем — его кошелёк бесконечен
+          if (!game.users.get(uid)?.isGM) bal[uid] = (bal[uid]||0) + win;
           pays.push({ name: game.users.get(uid)?.name || uid, win });
         }
       }
@@ -463,13 +523,19 @@ class HorseRacingApp extends Application {
         ? `<b>Выплаты:</b><br>` + pays.map(p=>`• ${p.name}: <b>${p.win} ${cur}</b>`).join('<br>')
         : `Никто не поставил на победителя.`;
       ChatMessage.create({ content: msg });
+      this.render(true);
     }
-    this.render(true);
+    // Игроки не рендерятся сами: дождутся syncState от ГМа с фазой results,
+    // иначе они бы перерисовали экран гонки со старой фазой racing.
   }
 
   close(...args) {
     if (this._interval) clearInterval(this._interval);
-    HorseRacingApp.instance = null;
+    this._raceActive = false;
+    this._done = true;
+    // Обнуляем синглтон, только если закрывается именно текущий экземпляр —
+    // «зомби»-окно не должно красть ссылку у живого.
+    if (HorseRacingApp.instance === this) HorseRacingApp.instance = null;
     return super.close(...args);
   }
 }

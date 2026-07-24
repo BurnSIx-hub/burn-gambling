@@ -59,7 +59,7 @@
         </div>
         {{#each horses}}
         <div class="horse-row {{#if myBet}}has-bet{{/if}}" data-horse="{{id}}">
-          <span class="horse-num" style="background:{{color}};color:#111">{{@index1}}</span>
+          <span class="horse-num" style="background:{{color}};color:#111">{{num}}</span>
           <span class="horse-name-cell">
             <img src="{{../modulePath}}/assets/horses/horse_{{id}}_frame1.png" class="horse-thumb">
             <span style="color:{{color}}">{{name}}</span>
@@ -109,6 +109,9 @@
           <button id="btn-start-race" class="btn-start"><i class="fas fa-flag-checkered"></i> СТАРТ!</button>
           <button id="btn-give-coins" class="btn btn-teal" style="width:100%;margin-top:6px">
             <i class="fas fa-hand-holding-usd"></i> Выдать монеты
+          </button>
+          <button id="btn-back-setup" class="btn btn-gray" style="width:100%;margin-top:6px">
+            <i class="fas fa-arrow-left"></i> Назад (вернуть ставки)
           </button>
         </div>
         {{/if}}
