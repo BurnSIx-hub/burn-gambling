@@ -82,7 +82,9 @@ function openApp() {
   // но rendered ещё false — старая проверка плодила второе окно.
   if (HorseRacingApp.instance) {
     HorseRacingApp.instance.render(true);
-    HorseRacingApp.instance.bringToTop?.();
+    // bringToTop только у отрендеренного окна: у окна в процессе первого
+    // рендера element ещё null — был краш getComputedStyle(null)
+    if (HorseRacingApp.instance.rendered) HorseRacingApp.instance.bringToTop();
     return;
   }
   new HorseRacingApp().render(true);
@@ -221,6 +223,7 @@ class HorseRacingApp extends Application {
       html.find('#btn-give-coins').on('click',    () => this.gmGive());
       html.find('#btn-open-all').on('click',      () => emit({ type: 'openApp' }));
       html.find('#btn-back-setup').on('click',    () => this.gmBackToSetup());
+      html.find('#btn-back-results').on('click',  () => this.gmBackFromResults());
       html.find('.name-input').on('change',       e  => this.gmRename(e));
 
       // Восстановление: мир завис в фазе racing (окно закрыли во время гонки,
@@ -312,6 +315,14 @@ class HorseRacingApp extends Application {
     await saveState(s);
     this.render(true);
     ChatMessage.create({ content: '🏇 Приём ставок отменён, ставки возвращены.' });
+  }
+
+  /** ГМ: с экрана результатов назад на стартовый (ставки уже выплачены) */
+  async gmBackFromResults() {
+    const s = getState();
+    s.phase = 'setup';
+    await saveState(s);
+    this.render(true);
   }
 
   async gmStart() {
@@ -415,10 +426,13 @@ class HorseRacingApp extends Application {
       this._speeds[h.id]    = speeds[h.id] || 1.5;
     });
 
-    // Switch to race screen FIRST
-    this.element.find('.screen-betting, .screen-setup, .screen-results').hide();
+    // Switch to race screen FIRST.
+    // ВАЖНО: только классами! .hidden объявлен с !important, поэтому
+    // jQuery .show() его НЕ пробивает — экран гонки оставался скрыт
+    // (чёрное окно, ширина трека мерилась у display:none элемента).
+    this.element.find('.screen-betting, .screen-setup, .screen-results').addClass('hidden');
     const raceScreen = this.element.find('.screen-race');
-    raceScreen.show();
+    raceScreen.removeClass('hidden');
 
     // Build lanes HTML
     const lanesEl = this.element.find('#race-lanes')[0];
