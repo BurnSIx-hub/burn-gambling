@@ -4,8 +4,9 @@
   {{!-- ══ SETUP ══ --}}
   <div class="screen screen-setup {{#unless (eq phase 'setup')}}hidden{{/unless}}">
     {{#if isGM}}
+    {{!-- ВАЖНО: id кнопок уникальны на весь шаблон — jQuery вешает
+         обработчик только на ПЕРВЫЙ дубликат id, остальные мёртвые --}}
     <div class="gm-bar">
-      <button id="btn-new-race"   class="btn btn-blue"><i class="fas fa-plus"></i> Новая гонка</button>
       <button id="btn-open-bets"  class="btn btn-gold"><i class="fas fa-coins"></i> Открыть ставки</button>
       <button id="btn-give-coins" class="btn btn-teal"><i class="fas fa-hand-holding-usd"></i> Выдать монеты</button>
       <button id="btn-open-all"   class="btn btn-gray"><i class="fas fa-users"></i> Открыть всем</button>
@@ -107,7 +108,7 @@
             {{#each horses}}<option value="{{id}}">{{name}}</option>{{/each}}
           </select>
           <button id="btn-start-race" class="btn-start"><i class="fas fa-flag-checkered"></i> СТАРТ!</button>
-          <button id="btn-give-coins" class="btn btn-teal" style="width:100%;margin-top:6px">
+          <button id="btn-give-coins-b" class="btn btn-teal" style="width:100%;margin-top:6px">
             <i class="fas fa-hand-holding-usd"></i> Выдать монеты
           </button>
           <button id="btn-back-setup" class="btn btn-gray" style="width:100%;margin-top:6px">
@@ -154,8 +155,7 @@
       </div>
       {{#if isGM}}
       <div class="gm-bar" style="justify-content:center;margin-top:14px">
-        <button id="btn-new-race"    class="btn btn-blue"><i class="fas fa-plus"></i> Новая гонка</button>
-        <button id="btn-give-coins"  class="btn btn-teal"><i class="fas fa-hand-holding-usd"></i> Выдать монеты</button>
+        <button id="btn-open-bets-r"  class="btn btn-gold"><i class="fas fa-coins"></i> Открыть ставки</button>
         <button id="btn-back-results" class="btn btn-gray"><i class="fas fa-arrow-left"></i> Назад</button>
       </div>
       <div class="gm-players" style="margin-top:12px">

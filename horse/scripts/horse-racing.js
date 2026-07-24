@@ -217,10 +217,13 @@ class HorseRacingApp extends Application {
   activateListeners(html) {
     super.activateListeners(html);
     if (game.user.isGM) {
-      html.find('#btn-new-race').on('click',      () => this.gmNew());
+      // id кнопок уникальны на весь шаблон: jQuery вешает обработчик
+      // только на первый дубликат id, остальные остаются мёртвыми.
       html.find('#btn-open-bets').on('click',     () => this.gmOpenBets());
+      html.find('#btn-open-bets-r').on('click',   () => this.gmOpenBets()); // с экрана результатов
       html.find('#btn-start-race').on('click',    () => this.gmStart());
       html.find('#btn-give-coins').on('click',    () => this.gmGive());
+      html.find('#btn-give-coins-b').on('click',  () => this.gmGive()); // на экране ставок
       html.find('#btn-open-all').on('click',      () => emit({ type: 'openApp' }));
       html.find('#btn-back-setup').on('click',    () => this.gmBackToSetup());
       html.find('#btn-back-results').on('click',  () => this.gmBackFromResults());
@@ -280,16 +283,8 @@ class HorseRacingApp extends Application {
   }
 
   // ── GM ─────────────────────────────────────
-  async gmNew() {
-    await saveState({
-      phase:  'setup',
-      horses: HORSES.map(h => ({...h, odds: this._randOdds()})),
-      bets:   {}, winner: null,
-    });
-    emit({ type: 'openApp' });
-    this.render(true);
-  }
-
+  // «Новая гонка» удалена: «Открыть ставки» сама перебрасывает кэфы и
+  // чистит ставки, отдельный сброс в setup был избыточен и путал.
   async gmOpenBets() {
     const s = getState();
     s.phase  = 'betting';
