@@ -149,7 +149,16 @@
 #poker-root .setup-user{font-size:.76em;color:#80b0ff;margin-top:2px;}
 
 /* ── Settings app ────────────────────────────────────────────── */
-.poker-settings-app .window-content{padding:16px;background:#0d1a0f;color:#e8d9a0;font-family:var(--cg-font,'Caveat'),cursive;}
+.poker-settings-app .window-content{padding:0;background:#0d1a0f;color:#e8d9a0;font-family:var(--cg-font,'Caveat'),cursive;display:flex;flex-direction:column;overflow:hidden;max-height:calc(100vh - 140px);}
+/* Прокрутка всего окна настроек: нижние блоки не должны обрезаться */
+.poker-settings-app .pset-frame{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;overflow:hidden;}
+.poker-settings-app .pset-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#8a5020 #0d1a0f;}
+.poker-settings-app .pset-scroll::-webkit-scrollbar{width:10px;}
+.poker-settings-app .pset-scroll::-webkit-scrollbar-track{background:#0a140b;border-radius:5px;}
+.poker-settings-app .pset-scroll::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#8a5020,#4a2e0a);border-radius:5px;border:1px solid #3a2a08;}
+.poker-settings-app .pset-scroll::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#c08040,#6a3a10);}
+/* Кнопки всегда видны, не уезжают вместе с прокруткой */
+.poker-settings-app .pset-footer{flex:0 0 auto;display:flex;justify-content:center;gap:10px;padding:10px 16px;background:#0a140b;border-top:2px solid #3a2a08;}
 .poker-settings-app .pset-group{margin-bottom:18px;}
 .poker-settings-app .pset-group > label{display:block;font-size:1em;color:#c8a050;margin-bottom:6px;}
 .poker-settings-app .pset-group .hint{font-family:'Times New Roman',Times,serif;font-size:13px;color:#70a060;margin-top:4px;}

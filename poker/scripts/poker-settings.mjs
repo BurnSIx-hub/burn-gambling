@@ -110,13 +110,14 @@ export class PokerSettings {
 export class PokerSettingsApp extends foundry.applications.api.ApplicationV2 {
   static DEFAULT_OPTIONS = {
     id: "poker-settings-app",
-    window: { title: "POKER.Settings.Title", resizable: false },
+    window: { title: "POKER.Settings.Title", resizable: true },
     position: { width: 520, height: "auto" },
-    classes: ["poker-dialog"],
+    classes: ["poker-dialog", "poker-settings-app"],
   };
 
   async _renderHTML(_ctx, _opts) {
     const el = document.createElement("div");
+    el.className = "pset-frame";
     el.innerHTML = this._buildHTML(this.getData());
     return el;
   }
@@ -190,10 +191,9 @@ export class PokerSettingsApp extends foundry.applications.api.ApplicationV2 {
 
 
   _buildHTML({ skins, feltPresets, currentSkin, feltColor, currentFont, isGM, stakes, unoRules }) {
-    const MOD = "poker-table-vtt";
     const skinBtns = skins.map(s => {
       const bg = s.image
-        ? `style="background-image:url('modules/${MOD}/assets/${s.file}');background-size:cover;background-position:center;"`
+        ? `style="background-image:${PokerSettings.skinBgStyle(s.id)};background-size:cover;background-position:center;"`
         : "";
       return `<div class="skin-opt${s.id===currentSkin?" selected":""}" data-skin="${s.id}" title="${s.label} — ${s.desc}">
         <div class="skin-preview skin-${s.id}" ${bg}></div>
@@ -206,7 +206,7 @@ export class PokerSettingsApp extends foundry.applications.api.ApplicationV2 {
             data-color="${p.color}" style="background:${p.color}"></div>`
     ).join("");
 
-    return `<div style="padding:16px;background:#0d1a0f;color:#e8d9a0;font-family:'IM Fell English SC',serif">
+    return `<div class="pset-scroll" style="padding:16px;background:#0d1a0f;color:#e8d9a0;font-family:'IM Fell English SC',serif">
       <h2 style="font-family:'Cinzel Decorative',cursive;color:#f0c040;text-align:center;margin-bottom:16px;font-size:1.1em">
         ${L("Settings.TableTitle")}
       </h2>
@@ -251,10 +251,11 @@ export class PokerSettingsApp extends foundry.applications.api.ApplicationV2 {
         </div>
       </div>
 
-      <div style="display:flex;justify-content:center;gap:10px;margin-top:8px">
-        <button id="pset-save"  class="g" style="padding:8px 28px;font-size:1.05em;cursor:pointer">${L("Settings.Save")}</button>
-        <button id="pset-close"           style="padding:8px 20px;font-size:1.05em;cursor:pointer">${L("Settings.Close")}</button>
-      </div>
+    </div>
+
+    <div class="pset-footer">
+      <button id="pset-save"  class="g" style="padding:8px 28px;font-size:1.05em;cursor:pointer">${L("Settings.Save")}</button>
+      <button id="pset-close"           style="padding:8px 20px;font-size:1.05em;cursor:pointer">${L("Settings.Close")}</button>
     </div>`;
   }
 
