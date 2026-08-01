@@ -109,6 +109,11 @@
 #poker-root .bet-row label{font-size:1em;color:#c8a050;}
 #poker-root input[type=text]{background:#0d1a0f;border:2px solid #4a2e0a;border-radius:6px;color:#e8c0ff;font-family:var(--cg-font,'Caveat'),cursive;font-size:1em;padding:6px 10px;outline:none;width:125px;}
 #poker-root select{background:#0d1a0f;border:2px solid #4a2e0a;border-radius:6px;color:#e8c0ff;font-family:var(--cg-font,'Caveat'),cursive;font-size:1em;padding:6px 10px;outline:none;cursor:pointer;}
+/* Ядро Foundry жёстко ставит height/line-height = --input-height (32px). При
+   нашем шрифте 18px строка не помещается в content-box и обрезается сверху и
+   снизу — заметнее всего на выносных элементах (p, y, g, скобки). Пусть поле
+   растёт под текст. */
+#poker-root input[type=text],#poker-root input[type=number],#poker-root select{height:auto;min-height:0;line-height:1.35;}
 #poker-root input[type=text]:focus,#poker-root select:focus{border-color:#9040d0;box-shadow:0 0 10px #9040d055;}
 
 /* ── Hints ───────────────────────────────────────────────────── */
@@ -188,6 +193,7 @@
 .poker-settings-app button.sm{padding:5px 12px;font-size:.9em;}
 .poker-settings-app input[type=text],.poker-settings-app select{background:#0d1a0f;border:2px solid #4a2e0a;border-radius:6px;color:#e8c0ff;font-family:var(--cg-font,'Caveat'),cursive;font-size:1em;padding:6px 10px;outline:none;}
 .poker-settings-app select{cursor:pointer;}
+.poker-settings-app input[type=text],.poker-settings-app input[type=number],.poker-settings-app select{height:auto;min-height:0;line-height:1.35;}
 .poker-settings-app input[type=text]:focus,.poker-settings-app select:focus{border-color:#9040d0;box-shadow:0 0 10px #9040d055;}
 
 /* ── Toast ───────────────────────────────────────────────────── */
