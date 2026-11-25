@@ -3,7 +3,8 @@
  * Контейнер объединяет бывшие модули poker-table-vtt (poker/) и
  * horse-racing (horse/). Их код работает как раньше; настройки хранятся
  * под старыми namespace, поэтому миграция данных не нужна.
- * Здесь — только окно-картотека и одна плитка в BurnHub.
+ * Здесь — окно-картотека, плитки в BurnHub и раздел 🔥 Gambling в
+ * «Настройках» для старых namespace (см. categorizeEntry).
  */
 
 const { ApplicationV2 } = foundry.applications.api;
@@ -68,6 +69,38 @@ class GamblingCatalog extends ApplicationV2 {
     });
   }
 }
+
+/* ------------------------- Раздел в «Настройках» -------------------------- */
+
+// Foundry раскладывает настройки по модулю, чей id совпадает с namespace.
+// Старых модулей больше нет, и настройки суб-модулей падали в «Не назначено».
+const LEGACY_NS = new Set(["poker-table-vtt", "horse-racing"]);
+
+function categorizeEntry(wrapped, namespace, ...args) {
+  // Исходный метод зовём всегда: обёртку WRAPPER, которая не передаёт вызов
+  // дальше, libWrapper снимает.
+  const category = wrapped(namespace, ...args);
+  const gambling = LEGACY_NS.has(namespace) ? game.modules.get("burn-gambling") : null;
+  return gambling ? { id: gambling.id, label: gambling.title } : category;
+}
+
+Hooks.once("setup", () => {
+  const path = "foundry.applications.settings.SettingsConfig.prototype._categorizeEntry";
+  const proto = foundry.applications.settings?.SettingsConfig?.prototype;
+  if (typeof proto?._categorizeEntry !== "function") {
+    console.warn("burn-gambling | нет SettingsConfig#_categorizeEntry — настройки останутся в «Не назначено»");
+    return;
+  }
+  try {
+    if (globalThis.libWrapper) libWrapper.register("burn-gambling", path, categorizeEntry, "WRAPPER");
+    else {
+      const original = proto._categorizeEntry;
+      proto._categorizeEntry = function (...args) { return categorizeEntry.call(this, original.bind(this), ...args); };
+    }
+  } catch (err) {
+    console.error("burn-gambling | не удалось собрать настройки под 🔥 Gambling", err);
+  }
+});
 
 // Каждая карточка — отдельная плитка в папке 🔥 Burn (плоский список).
 // Окно GamblingCatalog оставлено в коде на будущее.
